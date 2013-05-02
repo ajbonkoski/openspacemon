@@ -74,9 +74,8 @@ class SpaceMonopoly:
 	main_vbox.pack_start(self.bodybox, False, True, 0)
 
 	### Build the GU'Is body
-	grid = gtk.Image()
-	grid.set_from_file('grid.png')
-	self.bodybox.pack_start(grid, False, True, 0)
+	self.grid = SpacemonGrid()
+	self.bodybox.pack_start(self.grid, False, True, 0)
 	self.bodybox.pack_start(self.sidebar, False, True, 10)
 
 	## uild the Side Bar
@@ -104,6 +103,44 @@ class SpaceMonopoly:
     def main(self):
         gtk.main()
 
+
+
+class SpacemonGrid(gtk.Frame):
+
+    def __init__(self):
+	gtk.Frame.__init__(self)
+	self.set_size_request(592, 481)
+
+	block_blue = 'block-blue.png'
+	block_red = 'block-red.png'
+	self.circle = image_resource('circle.png')
+
+	xmax, ymax = 16, 12
+	self.table = gtk.Table(xmax, ymax)
+	self.add(self.table)
+	i = 0
+	for y in range(ymax):
+            for x in range(xmax):
+		if y%2 == 0:
+                    if x%2 == 0:
+			block = block_red
+                    else:
+			block = block_blue
+		else:
+                    if x%2 == 0:
+			block = block_blue
+                    else:
+			block = block_red
+		self.set_grid_loc(x, y, block)
+
+    def set_grid_loc(self, x, y, fname):
+	self.table.attach(image_resource(fname), x, x+1, y, y+1)
+
+
+def image_resource(fname):
+    image = gtk.Image()
+    image.set_from_file('resources/'+fname)
+    return image
 
 if __name__ == "__main__":
     try: main()
