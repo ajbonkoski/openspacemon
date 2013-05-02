@@ -1,0 +1,9 @@
+## Temp files
+*~
+\#*#
+
+## Binaries
+*.pyc
+
+## Examples Directory
+examples/
