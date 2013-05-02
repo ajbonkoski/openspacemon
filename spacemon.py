@@ -113,7 +113,6 @@ class SpacemonGrid(gtk.Frame):
 
 	block_blue = 'block-blue.png'
 	block_red = 'block-red.png'
-	self.circle = image_resource('circle.png')
 
 	xmax, ymax = 16, 12
 	self.table = gtk.Table(xmax, ymax)
@@ -132,6 +131,8 @@ class SpacemonGrid(gtk.Frame):
                     else:
 			block = block_red
 		self.set_grid_loc(x, y, block)
+
+	set_grid_loc(2, 3, 'circle.png')
 
     def set_grid_loc(self, x, y, fname):
 	self.table.attach(image_resource(fname), x, x+1, y, y+1)
