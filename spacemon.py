@@ -5,6 +5,8 @@
 import pygtk
 pygtk.require('2.0')
 import gtk
+import sys
+
 from company_dialog import *
 from company import names as company_names
 from controller import *
@@ -74,7 +76,7 @@ class SpaceMonopoly:
 	main_vbox.pack_start(self.bodybox, False, True, 0)
 
 	### Build the GU'Is body
-	self.grid = SpacemonGrid()
+	self.grid = SpacemonGrid(self.controller)
 	self.bodybox.pack_start(self.grid, False, True, 0)
 	self.bodybox.pack_start(self.sidebar, False, True, 10)
 
@@ -107,36 +109,67 @@ class SpaceMonopoly:
 
 class SpacemonGrid(gtk.Frame):
 
-    def __init__(self):
+    def __init__(self, controller):
+	self.controller = controller
+
 	gtk.Frame.__init__(self)
 	self.set_size_request(592, 481)
-
-	block_blue = 'block-blue.png'
-	block_red = 'block-red.png'
 
 	xmax, ymax = 16, 12
 	self.table = gtk.Table(xmax, ymax)
 	self.add(self.table)
-	i = 0
+
+	self.grid_cells = [[] for i in range(ymax)]
 	for y in range(ymax):
             for x in range(xmax):
-		if y%2 == 0:
-                    if x%2 == 0:
-			block = block_red
-                    else:
-			block = block_blue
+		block_widget = self.block_resource(x, y)
+		self.grid_cells[y].append(block_widget)
+		self.table.attach(block_widget, x, x+1, y, y+1)
+
+	self.update()
+
+    def get_type_by_coords(self, x, y):
+	if y%2 == 0:
+            if x%2 == 0:
+                return 'red'
+            else:
+                return 'blue'
+        else:
+            if x%2 == 0:
+                return 'blue'
+            else:
+                return 'red'
+
+    def block_resource(self, x, y):
+	color = self.get_type_by_coords(x, y)
+	name = 'block-{0}.png'.format(color)
+	return image_resource(name)
+
+    def circle_resource(self, x, y):
+	color = self.get_type_by_coords(x, y)
+	name = 'circle-{0}.png'.format(color)
+	return image_resource(name)
+
+    def change_grid_loc(self, x, y, resource_callback):
+        self.table.remove(self.grid_cells[y][x])
+	self.grid_cells[y][x] = resource_callback(x, y)
+	self.table.attach(self.grid_cells[y][x], x, x+1, y, y+1)
+
+    def update(self):
+	resource_callbacks = \
+		{'NORMAL':  self.block_resource,
+		 'CIRCLE': self.circle_resource}
+
+       	board = self.controller.get_board()
+	xmax, ymax = 16, 12
+	for y in range(ymax):
+            for x in range(xmax):
+		sqr = board.get_square(x, y)
+		if sqr not in resource_callbacks:
+                    print >> sys.stderr ("Error: Square type '{0}' not recognized".format(sqr))
 		else:
-                    if x%2 == 0:
-			block = block_blue
-                    else:
-			block = block_red
-		self.set_grid_loc(x, y, block)
-
-	set_grid_loc(2, 3, 'circle.png')
-
-    def set_grid_loc(self, x, y, fname):
-	self.table.attach(image_resource(fname), x, x+1, y, y+1)
-
+                    resource = resource_callbacks[sqr]
+                    self.change_grid_loc(x, y, resource)
 
 def image_resource(fname):
     image = gtk.Image()
