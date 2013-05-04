@@ -11,7 +11,8 @@ class SpacemonController:
             self.companies.append(company.Company(name))
 
 	self.board = board.SpacemonBoard()
-	self.board.randomize()
+	self.board.set_circles()
+	self.board.set_select()
 
     def get_company(self, i):
 	if i >= len(self.companies):
@@ -21,3 +22,16 @@ class SpacemonController:
     def get_board(self):
 	return self.board
 
+
+    def select_cell(self, x, y):
+	if self.board.get_square(x, y) != 'SELECT':
+            return False
+	else:
+            ## Do some selecting stuff!
+            self.board.clear_select()
+            self.board.set_diamond(x, y)
+            return True
+
+    def next_turn(self):
+	self.board.clear_select()
+	self.board.set_select()

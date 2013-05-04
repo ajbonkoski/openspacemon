@@ -42,6 +42,18 @@ class SpaceMonopoly:
 	self.company_window.set_company(data)
 	self.company_window.run()
 
+    def on_finish_turn(self, widget, data=None):
+	self.controller.next_turn()
+	self.update()
+
+    def gridcell_callback(self, x, y):
+
+	result = self.controller.select_cell(x, y)
+	if result == False:
+            print "Error: didnt click on Blue Select Square..."
+	else: ## register click on the GUI
+            self.update()
+
     def __init__(self, controller):
 	self.controller = controller
 
@@ -76,7 +88,7 @@ class SpaceMonopoly:
 	main_vbox.pack_start(self.bodybox, False, True, 0)
 
 	### Build the GU'Is body
-	self.grid = SpacemonGrid(self.controller)
+	self.grid = SpacemonGrid(self.controller, self.gridcell_callback)
 	self.bodybox.pack_start(self.grid, False, True, 0)
 	self.bodybox.pack_start(self.sidebar, False, True, 10)
 
@@ -89,6 +101,7 @@ class SpaceMonopoly:
             b.connect("clicked", self.company_button_clicked, i)
             self.company_buttons.append(b)
 	self.finish_turn = gtk.Button("Finish Turn")
+    	self.finish_turn.connect("clicked", self.on_finish_turn)
 
 	## add to the sidebar
 	self.sidebar.pack_start(gtk.Label(None), False, True, 0)
@@ -102,17 +115,23 @@ class SpaceMonopoly:
 	## show it all off!
         self.window.show_all()
 
+    def update(self):
+	self.grid.update()
+	self.window.show_all()
+
     def main(self):
         gtk.main()
 
 
+GRIDCELL_SIZEX = 37
+GRIDCELL_SIZEY = 40
+class SpacemonGrid(gtk.EventBox):
 
-class SpacemonGrid(gtk.Frame):
-
-    def __init__(self, controller):
+    def __init__(self, controller, gridcell_click_callback):
 	self.controller = controller
+	self.gridcell_click_callback = gridcell_click_callback
 
-	gtk.Frame.__init__(self)
+	gtk.EventBox.__init__(self)
 	self.set_size_request(592, 481)
 
 	xmax, ymax = 16, 12
@@ -126,7 +145,15 @@ class SpacemonGrid(gtk.Frame):
 		self.grid_cells[y].append(block_widget)
 		self.table.attach(block_widget, x, x+1, y, y+1)
 
+	## Attach click event-handler
+	self.connect ('button-press-event', self.click_callback)
+
 	self.update()
+
+    def click_callback(self, widget, event):
+	x, y = event.x, event.y
+	cell_x, cell_y = int(x/GRIDCELL_SIZEX), int(y/GRIDCELL_SIZEY)
+	self.gridcell_click_callback(cell_x, cell_y)
 
     def get_type_by_coords(self, x, y):
 	if y%2 == 0:
@@ -141,13 +168,21 @@ class SpacemonGrid(gtk.Frame):
                 return 'red'
 
     def block_resource(self, x, y):
-	color = self.get_type_by_coords(x, y)
-	name = 'block-{0}.png'.format(color)
-	return image_resource(name)
+	return self.color_resource_helper('block', x, y)
 
     def circle_resource(self, x, y):
+	return self.color_resource_helper('circle', x, y)
+
+    def diamond_resource(self, x, y):
+	return self.color_resource_helper('diamond', x, y)
+
+    def select_resource(self, x, y):
+	name = 'sel-big.png'
+	return image_resource(name)
+
+    def color_resource_helper(self, fname, x, y):
 	color = self.get_type_by_coords(x, y)
-	name = 'circle-{0}.png'.format(color)
+	name = '{0}-{1}.png'.format(fname, color)
 	return image_resource(name)
 
     def change_grid_loc(self, x, y, resource_callback):
@@ -158,7 +193,10 @@ class SpacemonGrid(gtk.Frame):
     def update(self):
 	resource_callbacks = \
 		{'NORMAL':  self.block_resource,
-		 'CIRCLE': self.circle_resource}
+		 'CIRCLE': self.circle_resource,
+		 'SELECT': self.select_resource,
+		 'DIAMOND': self.diamond_resource
+		}
 
        	board = self.controller.get_board()
 	xmax, ymax = 16, 12
