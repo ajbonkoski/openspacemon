@@ -108,7 +108,7 @@ class CompanyFrame(gtk.Frame):
     def update(self):
 	company = self.controller.get_company(self.index)
 	self.company_name.set_text(company.get_name())
-	self.set_size(company.get_price())
+	self.set_size(company.get_size())
 	self.set_price(company.get_price())
 	name, n = company.get_largest_shareholder()
 	self.set_largest_shareholder(name, n)

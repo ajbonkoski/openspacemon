@@ -180,14 +180,22 @@ class SpacemonGrid(gtk.EventBox):
 	name = 'sel-big.png'
 	return image_resource(name)
 
+    def company_resource(self, x, y, name):
+	fname = 'company-{0}'.format(name)
+	return self.color_resource_helper(fname, x, y)
+
     def color_resource_helper(self, fname, x, y):
 	color = self.get_type_by_coords(x, y)
 	name = '{0}-{1}.png'.format(fname, color)
 	return image_resource(name)
 
-    def change_grid_loc(self, x, y, resource_callback):
+    def change_grid_loc(self, x, y, resource_callback, data=''):
         self.table.remove(self.grid_cells[y][x])
-	self.grid_cells[y][x] = resource_callback(x, y)
+	if data != ''	:
+            resource = resource_callback(x, y, data)
+	else:
+            resource = resource_callback(x, y)
+	self.grid_cells[y][x] = resource
 	self.table.attach(self.grid_cells[y][x], x, x+1, y, y+1)
 
     def update(self):
@@ -195,7 +203,8 @@ class SpacemonGrid(gtk.EventBox):
 		{'NORMAL':  self.block_resource,
 		 'CIRCLE': self.circle_resource,
 		 'SELECT': self.select_resource,
-		 'DIAMOND': self.diamond_resource
+		 'DIAMOND': self.diamond_resource,
+		 'COMPANY': self.company_resource
 		}
 
        	board = self.controller.get_board()
@@ -203,11 +212,13 @@ class SpacemonGrid(gtk.EventBox):
 	for y in range(ymax):
             for x in range(xmax):
 		sqr = board.get_square(x, y)
-		if sqr not in resource_callbacks:
-                    print >> sys.stderr ("Error: Square type '{0}' not recognized".format(sqr))
+		sqr_type = sqr.split('-')[0]
+		sqr_val = '-'.join(sqr.split('-')[1:])
+		if sqr_type not in resource_callbacks:
+                    sys.stderr.write("Error: Square type '{0}' not recognized".format(sqr))
 		else:
-                    resource = resource_callbacks[sqr]
-                    self.change_grid_loc(x, y, resource)
+                    resource = resource_callbacks[sqr_type]
+                    self.change_grid_loc(x, y, resource, sqr_val)
 
 def image_resource(fname):
     image = gtk.Image()
