@@ -1,10 +1,12 @@
 import company
+import player
 import board
 
 class SpacemonController:
 
     def __init__(self):
 	self.company_manager = company.CompanyManager()
+	self.player_manager = player.PlayerManager()
 	self.board = board.SpacemonBoard()
 	self.board.set_circles()
 	self.board.set_select()
@@ -22,7 +24,8 @@ class SpacemonController:
             ## Do some selecting stuff!
             self.board.clear_select()
             self.board.set_diamond(x, y)
-            self.resolve_new_diamond(x, y)
+            result = self.resolve_new_diamond(x, y)
+            has_grown, company_id, growth_val = result
             return True
 
     def resolve_new_diamond(self, x, y):
@@ -48,27 +51,35 @@ class SpacemonController:
 	# print "len(circles) = {}".format(len(circles))
 
 	if len(companies) >= 2:
-            self.handle_merger(companies, circles, diamonds)
+            return self.handle_merger(companies, circles, diamonds)
+
 	elif len(companies) == 1:
             company_id = companies[0]
             company = self.company_manager.get_by_id(company_id)
             squares = diamonds + [(x,y)]
             company.grow(len(squares), len(circles))
-            self.board.assign_to_company(company_id, squares)
+            val = self.board.assign_to_company(company_id, squares)
+            return True, company_id, val
+
 	else:
             ## just a rando diamond?
             if len(diamonds) == 0 and len(circles) == 0:
-		return
+		return (False, '', 0)
             ## a new company!
             else:
 		squares = diamonds + [(x,y)]
-		id = self.company_manager.create_new(len(squares), len(circles))
-		self.board.assign_to_company(id, squares)
-		return
+		player = self.player_manager.get_current()
+		id = self.company_manager.create_new(len(squares), len(circles), player)
+		val = self.board.assign_to_company(id, squares)
+		#self.company_manager.get_by_id(id).change_user_shares(player.get_name(), NEW_INITIAL_SHARES)
+		#player.earn_cash(val)
+		return True, id, val
 
     def handle_merger(self, companies, circles, diamonds):
 	print "Error: Merger handling unimplemented"
+	exit(-1)
 
     def next_turn(self):
+	self.player_manager.set_next_player()
 	self.board.clear_select()
 	self.board.set_select()

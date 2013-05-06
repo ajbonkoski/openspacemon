@@ -4,6 +4,8 @@ company_ids = ["atlantis-ltd", "betelguese", "cannon-inc", "debenese", "eridnus-
 company_map = {}
 for i in range(len(names)): company_map[company_ids[i]] = names[i]
 
+INITIAL_SHARES = 5
+
 class CompanyIndexOutOfRangeError(Exception): pass
 class CompanyNewNotFound(Exception): pass
 
@@ -26,7 +28,7 @@ class CompanyManager:
             raise CompanyIndexOutOfRangeError()
 	return self.companies[i]
 
-    def create_new(self, num_squares, num_circles):
+    def create_new(self, num_squares, num_circles, player):
 	company = None
 	i = 0
 	for c in self.companies:
@@ -37,7 +39,7 @@ class CompanyManager:
 	if i >= len(self.companies):
             raise CompanyNewNotFoundError()
 
-	company.create_new(num_squares, num_circles)
+	company.create_new(num_squares, num_circles, player)
 	return company.get_id()
 
 class Company:
@@ -52,10 +54,12 @@ class Company:
 	self.price = 0
 	self.owners = {}
 
-    def create_new(self, num_squares, num_circles):
+    def create_new(self, num_squares, num_circles, player):
 	assert(self.size == 0)
 	self.size = num_squares
 	self.price = (num_squares + 5*num_circles)*100
+	self.change_user_shares(player.get_name(), INITIAL_SHARES)
+	player.earn_cash(self.price)
 
     def is_open(self):
 	return self.size != 0
@@ -91,3 +95,9 @@ class Company:
             return 0
 	else:
             return self.owners[name]
+
+    def change_user_shares(self, name, amt):
+	if name not in self.owners:
+            self.owners[name] = 0
+	self.owners[name] += amt
+
