@@ -140,8 +140,8 @@ class CompanyFrame(gtk.Frame):
 	self.set_price(price)
 	name, n = company.get_largest_shareholder()
 	self.set_largest_shareholder(name, n)
-	self.set_users_shares(company.get_users_shares('AJB'))
 	player = self.controller.get_current_player()
+	self.set_users_shares(company.get_users_shares(player))
 	can_buy = player.can_buy_shares(price) if price > 0 else 0
 	self.set_can_buy(can_buy)
 
@@ -168,9 +168,10 @@ class CompanyWindow:
         self.dialog.vbox.pack_start(self.notebook)
 
 
-    def run(self):
+    def run(self, company_index):
 	self.update()
 	self.dialog.show_all()
+	self.set_company(company_index)
 	response = self.dialog.run()
 	self.dialog.hide_all()
 

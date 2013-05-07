@@ -16,10 +16,10 @@ class SpacemonBoard:
     def set_circles(self):
 	self.randomize(1, 10, 'CIRCLE')
 
-    def set_select(self):
+    def set_select(self, allow_new_companies):
 	assert len(self.select_sqr) == 0
 	self.randomize(5, 5, 'SELECT',
-		allow_adj_diamond=True,
+		allow_new_companies=allow_new_companies,
 		notify_callback=lambda x,y: self.select_sqr.append((x,y)))
 
     def set_diamond(self, x, y):
@@ -40,7 +40,21 @@ class SpacemonBoard:
 		return True
 	return False
 
-    def randomize(self, min, max, type, allow_adj_diamond=True, notify_callback=None):
+    def is_adj_make_new_company(self, x, y):
+	adj_cells = [(x-1, y), (x, y-1), (x+1, y), (x, y+1)]
+	val = False
+	for xp, yp in adj_cells:
+            if xp < 0 or xp >= COLS: continue
+            if yp < 0 or yp >= ROWS: continue
+            if self.squares[yp][xp] == 'DIAMOND':
+		val = True
+            elif self.squares[yp][xp] == 'CIRCLE':
+		val = True
+            elif self.squares[yp][xp][:len('COMPANY')] == 'COMPANY':
+		return False
+	return val
+
+    def randomize(self, min, max, type, allow_new_companies=True, notify_callback=None):
 	num_circles = randint(min, max)
 	for n in range(num_circles):
             while True:
@@ -48,7 +62,7 @@ class SpacemonBoard:
             	y = randint(0, ROWS-1)
 		if self.squares[y][x] != 'NORMAL':
                     continue
-		if not allow_adj_diamond and self.is_adj_diamond(x, y):
+		if not allow_new_companies and self.is_adj_make_new_company(x, y):
                     continue
             	self.squares[y][x] = type
             	if notify_callback != None:
@@ -62,6 +76,14 @@ class SpacemonBoard:
 	val = 'COMPANY-{}'.format(company_id)
 	for x,y in squares:
             self.squares[y][x] = val
+
+    def relabel_companies(self, buyer_id, companies):
+	companies_labels = ['COMPANY-{}'.format(c) for c in companies]
+	buyer_label = 'COMPANY-{}'.format(buyer_id)
+	for y in range(ROWS):
+            for x in range(COLS):
+		if self.squares[y][x] in companies_labels:
+		    self.squares[y][x] = buyer_label
 
     def is_valid_square(self, x, y):
 	return x >= 0 and x < COLS and y >= 0 and y < ROWS

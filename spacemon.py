@@ -17,18 +17,12 @@ def main():
 
 class SpaceMonopoly:
 
-    def hello(self, widget, data=None):
-        print "Hello World"
-
     ## Callbacks
     def delete_event(self, widget, event, data=None):
         return False
 
     def destroy(self, widget, data=None):
         gtk.main_quit()
-
-    def print_hello(self, w, data):
-        print "Hello, World!"
 
     ## Real Stuff
     def make_main_menu(self, window, menu_items):
@@ -38,16 +32,14 @@ class SpaceMonopoly:
         window.add_accel_group(accel_group)
         return self.item_factory.get_widget("<main>")
 
-    def company_button_clicked(self, widget, data=None):
-	self.company_window.set_company(data)
-	self.company_window.run()
+    def company_button_clicked(self, widget, company_index):
+	self.company_window.run(company_index)
 
     def on_finish_turn(self, widget, data=None):
 	self.controller.next_turn()
 	self.update()
 
     def gridcell_callback(self, x, y):
-
 	result = self.controller.select_cell(x, y)
 	if result == False:
             print "Error: didnt click on Blue Select Square..."
@@ -68,9 +60,9 @@ class SpaceMonopoly:
 
         self.menubar = self.make_main_menu(self.window, (
             ( "/_File",         None,         None, 0, "<Branch>" ),
-            ( "/File/_New",     "<control>N", self.print_hello, 0, None ),
-            ( "/File/_Open",    "<control>O", self.print_hello, 0, None ),
-            ( "/File/_Save",    "<control>S", self.print_hello, 0, None ),
+            ( "/File/_New",     "<control>N", None, 0, None ),
+            ( "/File/_Open",    "<control>O", None, 0, None ),
+            ( "/File/_Save",    "<control>S", None, 0, None ),
             ( "/File/Save _As", None,         None, 0, None ),
             ( "/File/sep1",     None,         None, 0, "<Separator>" ),
             ( "/File/Quit",     "<control>Q", gtk.main_quit, 0, None ),

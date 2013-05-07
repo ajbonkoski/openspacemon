@@ -7,7 +7,7 @@ for i in range(len(names)): company_map[company_ids[i]] = names[i]
 INITIAL_SHARES = 5
 
 class CompanyIndexOutOfRangeError(Exception): pass
-class CompanyNewNotFound(Exception): pass
+class CompanyNewNotFoundError(Exception): pass
 
 class CompanyManager:
 
@@ -27,6 +27,12 @@ class CompanyManager:
             raise CompanyIndexOutOfRangeError()
 	return self.companies[i]
 
+    def can_make_new(self):
+	open = False
+	for c in self.companies:
+            open = open or c.is_open()
+	return open
+
     def create_new(self, num_squares, num_circles, player):
 	company = None
 	i = 0
@@ -41,12 +47,47 @@ class CompanyManager:
 	company.create_new(num_squares, num_circles, player)
 	return company.get_id()
 
+    def handle_merger(self, companies, num_squares, num_circles, player):
+	companies.sort()
+	companies_obj = [self.get_by_id(c) for c in companies]
+
+	buyer = self.get_merge_priority(companies_obj)
+	for company in companies_obj:
+            if buyer == company: continue
+            company.liquidate()
+            buyer.merge_in(company)
+            company.set_invalid()
+
+	buyer.grow_merge_ext(num_squares, num_circles)
+	return buyer.get_id()
+
+    def get_merge_priority(self, companies):
+	buyer = None
+	buyer_size = 0
+	for c in companies:
+            c_size = c.get_size()
+            if c_size > buyer_size:
+		buyer = c
+		buyer_size = c_size
+	return buyer
+
 class Company:
 
     def __init__(self, id):
 	self.id = id
 	assert(self.id in company_ids)
 	self.set_invalid()
+
+    def merge_in(self, company):
+	for player, num_shares in company.owners.items():
+            self.change_user_shares(player, num_shares)
+        self.size += company.size
+        self.price += company.price
+
+    def grow_merge_ext(self, num_squares, num_circles):
+        added_price = (num_squares + 5*num_circles)*100
+	self.price += added_price
+	self.size += num_squares
 
     def set_invalid(self):
 	self.size = 0
@@ -57,8 +98,12 @@ class Company:
 	assert(self.size == 0)
 	self.size = num_squares
 	self.price = (num_squares + 5*num_circles)*100
-	self.change_user_shares(player.get_name(), INITIAL_SHARES)
+	self.change_user_shares(player, INITIAL_SHARES)
 	player.change_cash(self.price)
+
+    def liquidate(self):
+	for player, num_shares in self.owners.items():
+            player.change_cash(num_shares * self.price)
 
     def is_open(self):
 	return self.size != 0
@@ -76,7 +121,7 @@ class Company:
 	self.size += num_squares
 	growth = (num_squares + 5*num_circles)*100
 	self.price += growth
-        player.change_cash(growth * self.get_users_shares(player.get_name()))
+        player.change_cash(growth * self.get_users_shares(player))
 
     def inc_size_by(self, n):
 	self.size += n
@@ -88,17 +133,17 @@ class Company:
 	largest = ('', -1)
 	for key, value in self.owners.items():
             if value > largest[1]:
-		largest = (key, value)
+		largest = (key.get_name(), value)
 	return largest
 
-    def get_users_shares(self, name):
-	if name not in self.owners:
+    def get_users_shares(self, player):
+	if player not in self.owners:
             return 0
 	else:
-            return self.owners[name]
+            return self.owners[player]
 
-    def change_user_shares(self, name, amt):
-	if name not in self.owners:
-            self.owners[name] = 0
-	self.owners[name] += amt
+    def change_user_shares(self, player, amt):
+	if player not in self.owners:
+            self.owners[player] = 0
+	self.owners[player] += amt
 

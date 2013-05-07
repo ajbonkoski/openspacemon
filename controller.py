@@ -9,7 +9,7 @@ class SpacemonController:
 	self.player_manager = player.PlayerManager()
 	self.board = board.SpacemonBoard()
 	self.board.set_circles()
-	self.board.set_select()
+	self.board.set_select(True)
 
     def get_company(self, i):
 	return self.company_manager.get_by_index(i)
@@ -35,32 +35,27 @@ class SpacemonController:
 	player = self.get_current_player()
 	price = company.get_price()
 	can_buy = player.can_buy_shares(price)
-	self.player_change_shares(player.get_name(), company.get_id(), can_buy)
+	self.player_change_shares(player, company, can_buy)
 
     def current_player_sell_all(self, company_index):
 	company = self.get_company(company_index)
 	player = self.get_current_player()
-	num_shares = company.get_users_shares(player.get_name())
-	self.player_change_shares(player.get_name(), company.get_id(), -num_shares)
+	num_shares = company.get_users_shares(player)
+	self.player_change_shares(player, company, -num_shares)
 
-    def player_change_shares(self, player_id, company_id, amt):
+    def player_change_shares(self, player, company, amt):
 	try:
-
-            ## get the company and player
-            player = self.player_manager.get_by_name(player_id)
-            company = self.company_manager.get_by_id(company_id)
-
             ## check if the transaction is valid
             price_per_share = company.get_price()
             cost = price_per_share * amt
             if not player.has_cash(cost):
 		return False
-            shares_owned = company.get_users_shares(player_id)
+            shares_owned = company.get_users_shares(player)
             if amt < 0 and -amt > shares_owned:  ## trying to sell more than have?
 		return False
 
             ## do the transaction
-            company.change_user_shares(player_id, amt)
+            company.change_user_shares(player, amt)
             player.change_cash(-cost)
 
             return True
@@ -85,7 +80,12 @@ class SpacemonController:
                     companies.append(c)
 
 	if len(companies) >= 2:
-            return self.handle_merger(companies, circles, diamonds)
+            player = self.player_manager.get_current()
+            squares = diamonds + [(x,y)]
+            buyer_id = self.company_manager.handle_merger(companies, len(squares), len(circles), player)
+            self.board.relabel_companies(buyer_id, companies)
+            self.board.assign_to_company(buyer_id, squares)
+            return True
 
 	elif len(companies) == 1:
             company_id = companies[0]
@@ -108,11 +108,7 @@ class SpacemonController:
 		val = self.board.assign_to_company(id, squares)
 		return True
 
-    def handle_merger(self, companies, circles, diamonds):
-	print "Error: Merger handling unimplemented"
-	exit(-1)
-
     def next_turn(self):
 	self.player_manager.set_next_player()
 	self.board.clear_select()
-	self.board.set_select()
+	self.board.set_select(self.company_manager.can_make_new())
