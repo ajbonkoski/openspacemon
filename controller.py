@@ -17,6 +17,9 @@ class SpacemonController:
     def get_board(self):
 	return self.board
 
+    def get_current_player(self):
+	return self.player_manager.get_current()
+
     def select_cell(self, x, y):
 	if self.board.get_square(x, y) != 'SELECT':
             return False
@@ -25,8 +28,45 @@ class SpacemonController:
             self.board.clear_select()
             self.board.set_diamond(x, y)
             result = self.resolve_new_diamond(x, y)
-            has_grown, company_id, growth_val = result
             return True
+
+    def current_player_buy_all(self, company_index):
+	company = self.get_company(company_index)
+	player = self.get_current_player()
+	price = company.get_price()
+	can_buy = player.can_buy_shares(price)
+	self.player_change_shares(player.get_name(), company.get_id(), can_buy)
+
+    def current_player_sell_all(self, company_index):
+	company = self.get_company(company_index)
+	player = self.get_current_player()
+	num_shares = company.get_users_shares(player.get_name())
+	self.player_change_shares(player.get_name(), company.get_id(), -num_shares)
+
+    def player_change_shares(self, player_id, company_id, amt):
+	try:
+
+            ## get the company and player
+            player = self.player_manager.get_by_name(player_id)
+            company = self.company_manager.get_by_id(company_id)
+
+            ## check if the transaction is valid
+            price_per_share = company.get_price()
+            cost = price_per_share * amt
+            if not player.has_cash(cost):
+		return False
+            shares_owned = company.get_users_shares(player_id)
+            if amt < 0 and -amt > shares_owned:  ## trying to sell more than have?
+		return False
+
+            ## do the transaction
+            company.change_user_shares(player_id, amt)
+            player.change_cash(-cost)
+
+            return True
+
+	except Exception:
+            return False
 
     def resolve_new_diamond(self, x, y):
 	companies = []
@@ -35,7 +75,6 @@ class SpacemonController:
 
 	squares = [(x-1, y), (x, y-1), (x+1, y), (x, y+1)]
 	for xp, yp in squares:
-            print "x={}, y={}, xp={}, yp={}".format(x, y, xp, yp)
             if self.board.is_diamond(xp, yp):
                 diamonds.append((xp, yp))
             elif self.board.is_circle(xp, yp):
@@ -45,11 +84,6 @@ class SpacemonController:
             	if c != False and c not in companies:
                     companies.append(c)
 
-	# print "In 'resolve_new_diamond'"
-	# print "len(companies) = {}".format(len(companies))
-	# print "len(diamonds) = {}".format(len(diamonds))
-	# print "len(circles) = {}".format(len(circles))
-
 	if len(companies) >= 2:
             return self.handle_merger(companies, circles, diamonds)
 
@@ -57,23 +91,22 @@ class SpacemonController:
             company_id = companies[0]
             company = self.company_manager.get_by_id(company_id)
             squares = diamonds + [(x,y)]
-            company.grow(len(squares), len(circles))
+            player = self.player_manager.get_current()
+            company.grow(len(squares), len(circles), player)
             val = self.board.assign_to_company(company_id, squares)
-            return True, company_id, val
+            return True
 
 	else:
             ## just a rando diamond?
             if len(diamonds) == 0 and len(circles) == 0:
-		return (False, '', 0)
+		return False
             ## a new company!
             else:
 		squares = diamonds + [(x,y)]
 		player = self.player_manager.get_current()
 		id = self.company_manager.create_new(len(squares), len(circles), player)
 		val = self.board.assign_to_company(id, squares)
-		#self.company_manager.get_by_id(id).change_user_shares(player.get_name(), NEW_INITIAL_SHARES)
-		#player.earn_cash(val)
-		return True, id, val
+		return True
 
     def handle_merger(self, companies, circles, diamonds):
 	print "Error: Merger handling unimplemented"

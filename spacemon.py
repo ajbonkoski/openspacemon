@@ -64,7 +64,7 @@ class SpaceMonopoly:
         self.window.add(main_vbox)
 
 	## Set up some other stuff
-	self.company_window = CompanyWindow(self.window, self.controller)
+	self.company_window = CompanyWindow(self, self.controller)
 
         self.menubar = self.make_main_menu(self.window, (
             ( "/_File",         None,         None, 0, "<Branch>" ),
@@ -94,7 +94,7 @@ class SpaceMonopoly:
 
 	## uild the Side Bar
 	self.sidebar.set_spacing(5)
-	self.money_box = gtk.Label("CASH")
+	self.money_box = gtk.Label()
 	self.company_buttons = []
         for i, name in enumerate(company_names):
             b = gtk.Button(name)
@@ -113,9 +113,11 @@ class SpaceMonopoly:
 	self.sidebar.pack_start(self.finish_turn, False, True, 0)
 
 	## show it all off!
-        self.window.show_all()
+	self.update()
 
     def update(self):
+	cash = self.controller.get_current_player().get_cash()
+	self.money_box.set_text('$'+format_number(',', cash))
 	self.grid.update()
 	self.window.show_all()
 

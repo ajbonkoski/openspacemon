@@ -17,7 +17,6 @@ class CompanyManager:
             self.companies.append(Company(id))
 
     def get_by_id(self, id):
-	print "get_by_id: id={}".format(id)
 	if id not in company_ids:
             raise CompanyIndexOutOfRangeError()
 	i = company_ids.index(id)
@@ -59,7 +58,7 @@ class Company:
 	self.size = num_squares
 	self.price = (num_squares + 5*num_circles)*100
 	self.change_user_shares(player.get_name(), INITIAL_SHARES)
-	player.earn_cash(self.price)
+	player.change_cash(self.price)
 
     def is_open(self):
 	return self.size != 0
@@ -73,9 +72,11 @@ class Company:
     def get_size(self):
 	return self.size
 
-    def grow(self, num_squares, num_circles):
+    def grow(self, num_squares, num_circles, player):
 	self.size += num_squares
-	self.price += (num_squares + 5*num_circles)*100
+	growth = (num_squares + 5*num_circles)*100
+	self.price += growth
+        player.change_cash(growth * self.get_users_shares(player.get_name()))
 
     def inc_size_by(self, n):
 	self.size += n

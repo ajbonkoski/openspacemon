@@ -1,6 +1,7 @@
 
 INITIAL_CASH = 6000
 
+class PlayerNotFoundException(Exception): pass
 class PlayerManager:
 
     def __init__(self):
@@ -15,6 +16,12 @@ class PlayerManager:
 	self.current_player += 1
 	self.current_player %= len(self.players)
 
+    def get_by_name(self, player_name):
+	for player in self.players:
+            if player.get_name() == player_name:
+		return player
+	raise PlayerNotFoundException()
+
 class PlayerDoesntHaveEnoughCashError(Exception): pass
 class Player:
 
@@ -25,19 +32,16 @@ class Player:
     def has_cash(self, amt):
 	return amt <= self.cash
 
-    def pay_cash(self, amt):
-	if not self.has_cash(amt):
+    def change_cash(self, amt):
+	if not self.has_cash(-amt):
             raise PlayerDoesntHaveEnoughCashError()
-	self.cash -= amt
+	self.cash += amt
 
-    def earn_cash(self, amt):
-	self.pay_cash(-amt)
-
-    def get_cash(self, amt):
+    def get_cash(self):
 	return self.cash
 
     def can_buy_shares(self, share_cost):
-	return int(self.cash/self.share_cost)
+	return int(self.cash/share_cost)
 
     def get_name(self):
 	return self.name
