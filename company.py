@@ -30,7 +30,7 @@ class CompanyManager:
     def can_make_new(self):
 	open = False
 	for c in self.companies:
-            open = open or c.is_open()
+            open = open or (not c.is_open())
 	return open
 
     def create_new(self, num_squares, num_circles, player):

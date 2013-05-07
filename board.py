@@ -16,10 +16,10 @@ class SpacemonBoard:
     def set_circles(self):
 	self.randomize(1, 10, 'CIRCLE')
 
-    def set_select(self, allow_new_companies):
+    def set_select(self, _allow_new_companies):
 	assert len(self.select_sqr) == 0
 	self.randomize(5, 5, 'SELECT',
-		allow_new_companies=allow_new_companies,
+		allow_new_companies=_allow_new_companies,
 		notify_callback=lambda x,y: self.select_sqr.append((x,y)))
 
     def set_diamond(self, x, y):
